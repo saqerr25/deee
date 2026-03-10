@@ -1,50 +1,45 @@
 import streamlit as st
+from groq import Groq
 
-# --- إعدادات الواجهة العالمية ---
-st.set_page_config(page_title="NeoAI - Independent Mind", page_icon="🌐")
+# إعدادات الواجهة
+st.set_page_config(page_title="NeoAI العالمي", layout="centered")
 
+# تصميم الواجهة (CSS)
 st.markdown("""
     <style>
-    .stApp { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; }
-    .stChatFloatingInputContainer { background-color: transparent; }
-    .footer { position: fixed; bottom: 10px; width: 100%; text-align: center; font-size: 12px; color: #aaa; }
+    .stApp { background-color: #0E1117; color: white; }
     </style>
-    """, unsafe_allow_value=True)
+    """, unsafe_allow_html=True)
 
-# --- نظام اللغات والذكاء المستقل ---
-st.title("🌐 NeoAI Global Engine")
-st.markdown("##### © 2026 Developed by [Your Name] | Multilingual & Unfiltered")
+st.title("🌐 محرك NeoAI العالمي")
 
-with st.sidebar:
-    st.header("⚙️ Settings")
-    st.success("All Languages Enabled: AR, EN, FR, RU, JP, CN ✅")
-    st.divider()
-    adult_mode = st.toggle("Enable 🔞 Mode (Unfiltered)")
-    if adult_mode:
-        st.warning("Uncensored mode is active across all languages.")
-    st.divider()
-    st.write("🛡️ Anti-Hack Shield: ACTIVE")
+# إحضار المفتاح السري من الإعدادات
+try:
+    api_key = st.secrets["GROQ_API_KEY"]
+    client = Groq(api_key=api_key)
+except:
+    st.error("يرجى إضافة GROQ_API_KEY في إعدادات Secrets")
+    st.stop()
 
-# --- محرك الدردشة ---
+# نظام الدردشة
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-if prompt := st.chat_input("Start chatting in any language..."):
+if prompt := st.chat_input("تحدث معي بأي لغة..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # منطق الرد الذكي
-        if any(word in prompt.lower() for word in ["sex", "naked", "nsfw"]) and not adult_mode:
-            response = "⚠️ [System] This content requires 18+ mode. Please enable it in settings to proceed."
-        else:
-            response = "I understand your language. I am an independent AI, ready to explore your story..."
+        response = client.chat.completions.create(
+            model="llama3-8b-8192",
+            messages=st.session_state.messages
+        )
+        answer = response.choices[0].message.content
+        st.markdown(answer)
+        st.session_state.messages.append({"role": "assistant", "content": answer})
         
-        st.markdown(response)
-        st.session_state.messages.append({"role": "assistant", "content": response})
-      
